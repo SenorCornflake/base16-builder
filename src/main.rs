@@ -11,6 +11,20 @@ enum Args {
     }
 }
 
+#[derive(Debug)]
+struct Template {
+    data: String,
+    extension: String,
+    output: String
+}
+
+#[derive(Debug)]
+struct Scheme {
+    slug: String,
+    name: String,
+    author: String,
+    colors: std::collections::HashMap<String, String>
+}
 
 fn main() {
     simple_logger::SimpleLogger::new()
@@ -23,9 +37,17 @@ fn main() {
         Args::Update => {
             download_resources();
         }
-        _ => ()
+        Args::Build{template, scheme} => {
+            build(template, scheme);
+        }
     }
+}
 
+fn build(template: Option<String>, scheme: Option<String>) {
+    if std::fs::metadata("templates").is_err() || std::fs::metadata("schemes").is_err() {
+        log::error!("Required resources not found in current directory, consider running update");
+        return;
+    }
 }
 
 fn download_resources() {
