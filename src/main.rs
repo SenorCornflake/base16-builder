@@ -1,14 +1,9 @@
+use rustache::Render;
+
 #[derive(structopt::StructOpt, Debug)]
 enum Args {
     Update,
-    Build {
-        #[structopt(long, short)]
-        /// Specify template by name or path
-        template: Option<String>,
-        #[structopt(long, short)]
-        /// Specify scheme by name or path
-        scheme: Option<String>,
-    }
+    Build 
 }
 
 #[derive(Debug)]
@@ -37,13 +32,13 @@ fn main() {
         Args::Update => {
             download_resources();
         }
-        Args::Build{template, scheme} => {
-            build(template, scheme);
+        Args::Build => {
+            build();
         }
     }
 }
 
-fn build(template: Option<String>, scheme: Option<String>) {
+fn build() {
     if std::fs::metadata("templates").is_err() || std::fs::metadata("schemes").is_err() {
         log::error!("Required resources not found in current directory, consider running update");
         return;
@@ -52,8 +47,8 @@ fn build(template: Option<String>, scheme: Option<String>) {
     let templates = get_templates();
     let schemes = get_schemes();
 
-    for s in schemes {
-        for t in templates {
+    for t in templates {
+        for s in &schemes {
             log::info!("Building {}/base16-{}{}", t.output, s.slug, t.extension);
 
             let mut data = rustache::HashBuilder::new();
@@ -62,10 +57,44 @@ fn build(template: Option<String>, scheme: Option<String>) {
             data = data.insert("scheme-author", s.author.as_ref());
 
             for (base, color) in &s.colors {
-                data = data.insert()
+                data = data.insert(base.to_string() + "-hex", color.as_ref());
+
+                let hex_red = color[0..2].to_string();
+                data = data.insert(base.to_string() + "-hex-r", hex_red.as_ref());
+                let red = i32::from_str_radix(color[0..2].as_ref(), 16).unwrap();
+                data = data.insert(base.to_string() + "-rgb-r", red);
+                data = data.insert(base.to_string() + "-dec-r", red / 255);
+
+                let hex_green = color[2..4].to_string();
+                data = data.insert(base.to_string() + "-hex-g", hex_green.as_ref());
+                let green = i32::from_str_radix(color[2..4].as_ref(), 16).unwrap();
+                data = data.insert(base.to_string() + "-rgb-g", green);
+                data = data.insert(base.to_string() + "-dec-g", green / 255);
+
+                let hex_blue = color[4..6].to_string();
+                data = data.insert(base.to_string() + "-hex-b", hex_blue.as_ref());
+                let blue = i32::from_str_radix(color[4..6].as_ref(), 16).unwrap();
+                data = data.insert(base.to_string() + "-rgb-b", blue);
+                data = data.insert(base.to_string() + "-dec-b", blue / 255);
+
+                data = data.insert(
+                    base.to_string() + "-hex-bgr",
+                    format!("{}{}{}", hex_blue, hex_green, hex_red),
+                );
             }
+            
+            let _ = std::fs::create_dir_all(format!("output/{}", &t.output));
+            let file_name = format!("output/{}/base16-{}{}", t.output, s.slug.to_lowercase().replace(" ", "_"), t.extension);
+
+            if std::fs::metadata(&file_name).is_ok() {
+                log::warn!("{} was overwritten", &file_name);
+            }
+            let f = std::fs::File::create(file_name).unwrap();
+            let mut out = std::io::BufWriter::new(f);
+            data.render(&t.data, &mut out).unwrap();
         }
     }
+
 }
 
 fn get_templates() -> Vec<Template> {
@@ -94,14 +123,16 @@ fn get_templates() -> Vec<Template> {
                     .as_str()
                     .unwrap_or("")
                     .to_string(),
-                output: data
+                output: template_dir_path
+                    .split("/")
+                    .collect::<Vec<&str>>()[1]
+                    .to_string() + "/" + data
                     .as_hash()
                     .unwrap()
                     .get(&yaml_rust::Yaml::from_str("output"))
                     .unwrap()
                     .as_str()
-                    .unwrap_or("")
-                    .to_string(),
+                    .unwrap(),
             };
 
             templates.push(template);
@@ -124,7 +155,7 @@ fn get_schemes() -> Vec<Scheme> {
             let scheme_file = scheme_file.unwrap().path();
             
             if let Some(extension) = scheme_file.extension() {
-                if extension == "yaml" {
+                if extension == "yaml" || extension == "yml" {
                     log::info!("Reading scheme {}", scheme_file.display());
                     
                     let scheme_data = parse_yaml_file(format!("{}", scheme_file.display()).as_str()).unwrap();
