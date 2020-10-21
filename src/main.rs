@@ -52,6 +52,11 @@ fn main() {
 }
 
 fn build_schemes() {
+    if std::fs::metadata("sources").is_err() || std::fs::metadata("templates").is_err() {
+        error("Required sources not found in current directory, consider running an update");
+        return;
+    }
+
     let schemes = get_schemes();
     let templates = get_templates();
     for t in templates {
