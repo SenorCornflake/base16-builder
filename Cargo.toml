@@ -7,10 +7,6 @@ edition = "2018"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-rustache = "0.1.0"
 git2 = "0.13.12"
 structopt = "0.3.20"
-yaml-rust = "0.4.4"
-log = "0.4.11"
-simple_logger = "1.11.0"
-linked-hash-map = "0.5.3"
+serde_yaml = "0.8.7"
