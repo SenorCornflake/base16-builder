@@ -406,6 +406,7 @@ fn render_template(template_content: &str, scheme: &Scheme) -> String {
         
         template_content = template_content.replace("{{scheme-name}}", scheme.name.as_str());
         template_content = template_content.replace("{{scheme-author}}", scheme.author.as_str());
+        template_content = template_content.replace("{{scheme-slug}}", scheme.slug.as_str());
         template_content = template_content.replace(format!("{{{{{}-hex}}}}", key).as_str(), value);
         template_content = template_content.replace(format!("{{{{{}-hex-r}}}}", key).as_str(), hex_r.as_str());
         template_content = template_content.replace(format!("{{{{{}-hex-g}}}}", key).as_str(), hex_g.as_str());
