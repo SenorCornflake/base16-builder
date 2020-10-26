@@ -68,7 +68,7 @@ fn build_schemes() {
                 }
             }
 
-            let file_path = format!("{}/{}{}", t.output_path, s.slug, t.extension);
+            let file_path = format!("{}/{}{}", t.output_path, format!("base16-{}", s.slug), t.extension);
             let contents = render_template(t.contents.as_str(), s);
             
             match std::fs::write(&file_path, contents) {
@@ -107,12 +107,6 @@ fn get_schemes() -> Vec<Scheme> {
                 .replace(".yaml", "")
                 .replace(".yml", "")
                 .to_lowercase();
-
-            let slug = if slug.contains("base16-") {
-                slug
-            } else {
-                format!("base16-{}", slug)
-            };
 
             let extension = file
                 .as_ref()
@@ -406,7 +400,7 @@ fn render_template(template_content: &str, scheme: &Scheme) -> String {
         
         template_content = template_content.replace("{{scheme-name}}", scheme.name.as_str());
         template_content = template_content.replace("{{scheme-author}}", scheme.author.as_str());
-        template_content = template_content.replace("{{scheme-slug}}", scheme.slug.as_str());
+        template_content = template_content.replace("{{scheme-slug}}", format!("base16-{}", scheme.slug).as_str());
         template_content = template_content.replace(format!("{{{{{}-hex}}}}", key).as_str(), value);
         template_content = template_content.replace(format!("{{{{{}-hex-r}}}}", key).as_str(), hex_r.as_str());
         template_content = template_content.replace(format!("{{{{{}-hex-g}}}}", key).as_str(), hex_g.as_str());
