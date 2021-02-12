@@ -9,4 +9,4 @@ edition = "2018"
 [dependencies]
 git2 = "0.13.12"
 structopt = "0.3.20"
-serde_yaml = "0.8.7"
+yaml-rust = "0.4"
