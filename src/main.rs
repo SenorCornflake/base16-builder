@@ -45,33 +45,144 @@ struct Template {
 }
 
 fn main() {
-    //let args: Args = structopt::StructOpt::from_args();
+    println!("{:#?}", get_templates("templates"));
+    let args: Args = structopt::StructOpt::from_args();
 
-    println!("{:#?}", create_scheme("base16-atelier-schemes/atelier-cave.yaml"));
+    match args {
+        Args::Update => { update(); }
+        _ => {}
+    }
+
     //println!("{:#?}", util::parse_yaml("lemon:")[0]["lemon"]);
     //util::git_clone("https://github.com/SenorCornflake/base16-builder".to_string(), "./base16-builder".to_string());
     
 }
 
+fn update() {
+    if util::check_path("sources.yaml", "file").is_err() {
+        util::print_color("red", "sources.yaml not found in current directory".to_string());
+        return
+    }
+
+//    let sources = read_yaml_file("sources.yaml");
+//    let schemes_repo = sources.get(&serde_yaml::Value::String(String::from("schemes")))
+//        .unwrap()
+//        .as_str()
+//        .unwrap();
+//    let templates_repo = sources.get(&serde_yaml::Value::String(String::from("templates")))
+//        .unwrap()
+//        .as_str()
+//        .unwrap();
+//
+//    match std::fs::metadata("sources") {
+//        Err(_) => {
+//            std::fs::create_dir("sources")
+//                .expect("Error creating directory");
+//        }
+//        Ok(_) => {
+//            warn("the file/folder \"sources\" will be overwritten");
+//            if std::path::PathBuf::from("sources").is_dir() {
+//                std::fs::remove_dir_all("sources").expect("Error removing directory");
+//            } else if std::path::PathBuf::from("sources").is_file() {
+//                std::fs::remove_file("sources").expect("Error removing file");
+//            }
+//        }
+//    }
+//
+//    git_clone(schemes_repo, "sources/schemes");
+//    git_clone(templates_repo, "sources/templates");
+//
+//    let schemes = read_yaml_file("sources/schemes/list.yaml");
+//    let templates = read_yaml_file("sources/templates/list.yaml");
+//
+//    for scheme in &schemes {
+//        let name = scheme.0.as_str().unwrap();
+//        let repo = scheme.1.as_str().unwrap();
+//        git_clone(repo, format!("schemes/{}", name).as_str());
+//    }
+//    for template in &templates {
+//        let name = template.0.as_str().unwrap();
+//        let repo = template.1.as_str().unwrap();
+//        git_clone(repo, format!("templates/{}", name).as_str());
+//    }
+    let sources = std::fs::read_to_string("sources.yaml")
+        .expect("Failed to read file");
+    let sources = &util::parse_yaml(&sources)[0];
+    let templates_repo = sources["templates"]
+        .as_str()
+        .unwrap();
+    let schemes_repo = sources["schemes"]
+        .as_str()
+        .unwrap();
+
+    // TODO: Use metadata instead of PathBuf to detect if file or dir
+    match std::fs::metadata("sources") {
+        Err(_) => {
+            std::fs::create_dir("sources")
+                .expect("Error creating directory");
+        }
+        Ok(_) => {
+            util::print_color("red", "the file/folder \"sources\" will be overwritten".to_string());
+            if std::path::PathBuf::from("sources").is_dir() {
+                std::fs::remove_dir_all("sources").expect("Error removing directory");
+            } else if std::path::PathBuf::from("sources").is_file() {
+                std::fs::remove_file("sources").expect("Error removing file");
+            }
+        }
+    }
+
+    util::git_clone(templates_repo, "sources/templates");
+    util::git_clone(schemes_repo, "sources/schemes");
+    
+    let templates = std::fs::read_to_string("sources/templates/list.yaml")
+        .expect("Failed to read file");
+    let schemes = std::fs::read_to_string("sources/schemes/list.yaml")
+        .expect("Failed to read file");
+
+    let templates = &util::parse_yaml(&templates)[0];
+    let schemes = &util::parse_yaml(&schemes)[0];
+
+    for (name, repo) in templates.as_hash().unwrap() {
+        let name = name
+            .as_str()
+            .unwrap();
+        let repo = repo
+            .as_str()
+            .unwrap();
+        util::git_clone(repo, &format!("templates/{}", name))
+    }
+
+    for (name, repo) in schemes.as_hash().unwrap() {
+        let name = name
+            .as_str()
+            .unwrap();
+        let repo = repo
+            .as_str()
+            .unwrap();
+        util::git_clone(repo, &format!("schemes/{}", name))
+    }
+}
+
 fn create_templates(template_repo: &str) -> Result<Vec<Template>, ()> {
+    let template_repo = util::home(template_repo);
     // Look for both yml and yaml files, just is case
     let mut config_ext = "";
     let mut exists = false;
 
-    if util::check_path(&format!("{}/templates/config.yaml", template_repo), "file").is_ok() {
+    if util::check_path(&format!("{}/templates/config.yaml", &template_repo), "file").is_ok() {
         config_ext = "yaml";
         exists = true;
     } else {
         return Err(());
     }
 
-    if !exists && util::check_path(&format!("{}/templates/config.yml", template_repo), "file").is_ok() {
+    if !exists && util::check_path(&format!("{}/templates/config.yml", &template_repo), "file").is_ok() {
         config_ext = "yml";
     } else if !exists {
         return Err(());
     }
 
-    let config = std::fs::read_to_string(&format!("{}/templates/config.{}", template_repo, config_ext))
+    let config = std::fs::read_to_string(&format!("{}/templates/config.{}", &template_repo, config_ext))
         .expect("Failed to read file");
 
     let config = &util::parse_yaml(&config)[0];
@@ -88,11 +199,17 @@ fn create_templates(template_repo: &str) -> Result<Vec<Template>, ()> {
             .unwrap()
             .to_string();
         let extension = template_config["extension"]
-            .as_str()
-            .unwrap()
-            .to_string();
+            .as_str();
+
+        let extension = if extension.is_none() {
+            String::new()
+        } else {
+            extension
+                .unwrap()
+                .to_string()
+        };
         
-        let contents = std::fs::read_to_string(&format!("{}/templates/{}.mustache", template_repo, template_name))
+        let contents = std::fs::read_to_string(&format!("{}/templates/{}.mustache", &template_repo, template_name))
             .expect("Failed to read file");
 
         let program_name: Vec<&str> = template_repo
@@ -115,7 +232,8 @@ fn create_templates(template_repo: &str) -> Result<Vec<Template>, ()> {
 }
 
 fn create_scheme(scheme_file: &str) -> Result<Scheme, ()> {   
-    if util::check_path(scheme_file, "file").is_err() {
+    let scheme_file = util::home(scheme_file);
+    if util::check_path(&scheme_file, "file").is_err() {
         return Err(());
     }
 
@@ -195,6 +313,32 @@ fn create_scheme(scheme_file: &str) -> Result<Scheme, ()> {
 
     return Ok(parsed_scheme);
 }
+
+fn get_templates(templates_dir: &str) -> Result<Vec<Vec<Template>>, ()> {
+    let templates_dir = util::home(templates_dir);
+    if util::check_path(&templates_dir, "dir").is_err() {
+        return Err(());
+    }
+
+    let mut templates: Vec<Vec<Template>> = Vec::new();
+
+    for template_repo in std::fs::read_dir(&templates_dir).unwrap() {
+        let template_repo = template_repo
+            .unwrap()
+            .file_name();
+        let template_repo = template_repo
+            .to_str()
+            .unwrap();
+            
+        let ts = create_templates(&format!("{}/{}", templates_dir, template_repo));
+        if ts.is_ok() {
+            templates.push(ts.unwrap());
+        }
+    }
+
+    return Ok(templates)
+}
+
 
 //fn build_schemes() {
 //    if std::fs::metadata("sources").is_err() || std::fs::metadata("templates").is_err() {

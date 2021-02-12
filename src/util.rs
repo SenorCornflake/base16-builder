@@ -1,4 +1,3 @@
-use std::collections::HashMap;
 
 use git2::Repository;
 use yaml_rust::{YamlLoader, Yaml};
@@ -15,8 +14,8 @@ pub fn print_color(color: &str, text: String) {
     println!("{}{}{}", color_code, text, "\x1b[0m");
 }
 
-pub fn git_clone(url: String, path: String) {
-    match Repository::clone(url.as_str(), &path) {
+pub fn git_clone(url: &str, path: &str) {
+    match Repository::clone(url, path) {
         Ok(_) =>   print_color("green", format!("Cloned \"{}\" to \"{}\"", url, path)),
         Err(e) =>  print_color("red", format!("Failed to clone \"{}\" to \"{}\" | {}", url, path, e.message())),
     }
@@ -47,4 +46,12 @@ pub fn check_path(path: &str, expect: &str) -> Result<(), ()> {
     }
 
     return Ok(());
+}
+
+pub fn home(path: &str) -> String {
+    let home = std::env::var("HOME")
+        .unwrap()
+        .as_str()
+        .to_string();
+    return path.replace("~", home.as_str());
 }
