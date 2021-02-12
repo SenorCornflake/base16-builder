@@ -47,7 +47,7 @@ struct Template {
 fn main() {
     //let args: Args = structopt::StructOpt::from_args();
 
-    println!("{:#?}", create_templates("base16-alacritty"));
+    println!("{:#?}", create_scheme("base16-atelier-schemes/atelier-cave.yaml"));
     //println!("{:#?}", util::parse_yaml("lemon:")[0]["lemon"]);
     //util::git_clone("https://github.com/SenorCornflake/base16-builder".to_string(), "./base16-builder".to_string());
     
@@ -112,6 +112,88 @@ fn create_templates(template_repo: &str) -> Result<Vec<Template>, ()> {
     }
 
     return Ok(templates)
+}
+
+fn create_scheme(scheme_file: &str) -> Result<Scheme, ()> {   
+    if util::check_path(scheme_file, "file").is_err() {
+        return Err(());
+    }
+
+    let slug: Vec<&str> = scheme_file
+        .split("/")
+        .collect();
+    let slug = slug
+        .last()
+        .unwrap();
+    let slug = std::path::PathBuf::from(slug);
+    let slug = slug
+        .file_stem()
+        .unwrap()
+        .to_str()
+        .unwrap();
+    
+
+    let scheme = std::fs::read_to_string(scheme_file)
+        .expect("Failed to read file");
+
+    let scheme = &util::parse_yaml(&scheme)[0];
+
+    let mut parsed_scheme = Scheme {
+        name:   String::new(),
+        author: String::new(),
+        slug:   slug.to_string(),
+        base00: String::new(),
+        base01: String::new(),
+        base02: String::new(),
+        base03: String::new(),
+        base04: String::new(),
+        base05: String::new(),
+        base06: String::new(),
+        base07: String::new(),
+        base08: String::new(),
+        base09: String::new(),
+        base0A: String::new(),
+        base0B: String::new(),
+        base0C: String::new(),
+        base0D: String::new(),
+        base0E: String::new(),
+        base0F: String::new(),
+    };
+
+    for (key, value) in scheme.as_hash().unwrap() {
+        let key = key
+            .as_str()
+            .unwrap();
+        let value = value
+            .as_str()
+            .unwrap()
+            .to_string();
+
+
+        match key {
+            "scheme" => { parsed_scheme.name   = value }
+            "author" => { parsed_scheme.author = value }
+            "base00" => { parsed_scheme.base00 = value }
+            "base01" => { parsed_scheme.base01 = value }
+            "base02" => { parsed_scheme.base02 = value }
+            "base03" => { parsed_scheme.base03 = value }
+            "base04" => { parsed_scheme.base04 = value }
+            "base05" => { parsed_scheme.base05 = value }
+            "base06" => { parsed_scheme.base06 = value }
+            "base07" => { parsed_scheme.base07 = value }
+            "base08" => { parsed_scheme.base08 = value }
+            "base09" => { parsed_scheme.base09 = value }
+            "base0A" => { parsed_scheme.base0A = value }
+            "base0B" => { parsed_scheme.base0B = value }
+            "base0C" => { parsed_scheme.base0C = value }
+            "base0D" => { parsed_scheme.base0D = value }
+            "base0E" => { parsed_scheme.base0E = value }
+            "base0F" => { parsed_scheme.base0F = value }
+            _ => {}
+        }
+    }
+
+    return Ok(parsed_scheme);
 }
 
 //fn build_schemes() {
