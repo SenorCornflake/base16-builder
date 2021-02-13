@@ -130,7 +130,7 @@ fn main() {
                         }
                     }
                     
-                    util::print_color("yellow", format!("Building \"{}\" for \"{}\" using template \"{}\"", s.slug, t.program_name, t.name));
+                    util::print_color("yellow", format!("Building \"{}\" for \"{}\" using template \"{}\" to \"{}/{}\"", s.slug, t.program_name, t.name, &output_path, &output_file));
                     let rendered_contents = render_template(&t.contents, &s);
 
                     match std::fs::write(&format!("{}/{}", output_path, output_file), rendered_contents) {
@@ -435,40 +435,6 @@ fn get_templates(templates_dir: &str) -> Result<Vec<Template>, ()> {
 
     return Ok(templates)
 }
-
-
-//fn build_schemes() {
-//    if std::fs::metadata("sources").is_err() || std::fs::metadata("templates").is_err() {
-//        error("Required sources not found in current directory, consider running an update");
-//        return;
-//    }
-//
-//    let schemes = get_schemes();
-//    let templates = get_templates();
-//    for t in templates {
-//        for s in &schemes {
-//            match std::fs::create_dir_all(&t.output_path) {
-//                Ok(_) => {}
-//                Err(_) => {
-//                    error(format!("Failed to recursively create directory {}", t.output_path).as_str());
-//                }
-//            }
-//
-//            let file_path = format!("{}/{}{}", t.output_path, format!("base16-{}", s.slug), t.extension);
-//            let contents = render_template(t.contents.as_str(), s);
-//            
-//            match std::fs::write(&file_path, contents) {
-//                Ok(_) => {
-//                    success(format!("Built {}", file_path).as_str());
-//                }
-//                Err(_) => {
-//                    error(format!("Failed to build/write to {}", file_path).as_str())
-//                }
-//            }
-//        }
-//    }
-//}
-
 
 fn render_template(template_content: &str, scheme: &Scheme) -> String {
     let mut template_content = String::from(template_content);
