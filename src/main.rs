@@ -26,6 +26,10 @@ enum Args {
         #[structopt(long, short = "f")]
         /// The name of the file of the generated scheme(s)
         output_file: Option<String>,
+        #[structopt(long, short)]
+        /// Do not place the schemes in the output directoru which the template provides, default false
+        disable_template_output: bool,
+        
     }
 }
 
@@ -66,7 +70,7 @@ fn main() {
 
     match args {
         Args::Update => { download_sources(); }
-        Args::Build { template_repo, template_name, scheme, output_root, output_file } => {
+        Args::Build { template_repo, template_name, scheme, output_root, output_file, disable_template_output } => {
             let mut templates: Vec<Template> = Vec::new();
             let mut schemes: Vec<Scheme> = Vec::new();
             let output_root = if output_root.is_some() {
@@ -110,14 +114,18 @@ fn main() {
                     continue;
                 }
                 for s in &schemes {
-                    let output_path = if output_file.is_some() {
-                        (&output_root).to_string()
+                    let output_path = if disable_template_output {
+                        output_root.to_string()
                     } else {
-                        format!("{}/{}", &output_root, t.output_path)
+                        format!("{}/{}", output_root, t.output_path)
                     };
 
                     let output_file = if output_file.is_some() {
-                        output_file.as_ref().unwrap().as_str().to_string()
+                        output_file
+                            .as_ref()
+                            .unwrap()
+                            .as_str()
+                            .to_string()
                     } else {
                         format!("base16-{}{}", s.slug, t.extension)
                     };
