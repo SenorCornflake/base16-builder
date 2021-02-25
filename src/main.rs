@@ -73,10 +73,11 @@ fn main() {
         Args::Build { template_repo, template_name, scheme, output_root, output_file, disable_template_output } => {
             let mut templates: Vec<Template> = Vec::new();
             let mut schemes: Vec<Scheme> = Vec::new();
-            let output_root = if output_root.is_some() {
+
+            let mut output_root = if output_root.is_some() {
                 output_root.unwrap()
             } else {
-                String::from("output")
+                String::new()
             };
 
             if template_repo.is_some() {
@@ -110,6 +111,12 @@ fn main() {
             }
 
             for t in &templates {
+                // If the user did not specify an output root then create a root folder using the
+                // program's name
+                if output_root.len() == 0 {
+                    output_root = format!("output/{}", t.program_name);
+                }
+
                 if template_name.is_some() && &t.name != template_name.as_ref().unwrap() {
                     continue;
                 }
