@@ -27,7 +27,7 @@ enum Args {
         /// The name of the file of the generated scheme(s)
         output_file: Option<String>,
         #[structopt(long, short)]
-        /// Do not place the schemes in the output directoru which the template provides, default false
+        /// Do not place the schemes in the output directory which the template provides, default false
         disable_template_output: bool,
         
     }
