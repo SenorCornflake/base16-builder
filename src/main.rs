@@ -74,12 +74,6 @@ fn main() {
             let mut templates: Vec<Template> = Vec::new();
             let mut schemes: Vec<Scheme> = Vec::new();
 
-            let mut output_root = if output_root.is_some() {
-                output_root.unwrap()
-            } else {
-                String::new()
-            };
-
             if template_repo.is_some() {
                 let template = util::home(&template_repo.unwrap());
                 let t = create_templates(&template);
@@ -113,10 +107,17 @@ fn main() {
             for t in &templates {
                 // If the user did not specify an output root then create a root folder using the
                 // program's name
-                if output_root.len() == 0 {
-                    output_root = format!("output/{}", t.program_name);
-                }
+                let output_root = if output_root.is_none() {
+                    format!("output/{}", t.program_name)
+                } else {
+                    output_root
+                        .as_ref()
+                        .unwrap()
+                        .as_str()
+                        .to_string()
+                };
 
+                // Skip template if it is not the one the user specified
                 if template_name.is_some() && &t.name != template_name.as_ref().unwrap() {
                     continue;
                 }
@@ -136,6 +137,7 @@ fn main() {
                     } else {
                         format!("base16-{}{}", s.slug, t.extension)
                     };
+
 
                     match std::fs::create_dir_all(&output_path) {
                         Ok(_) => {}
@@ -177,7 +179,6 @@ fn download_sources() {
         .as_str()
         .unwrap();
 
-    // TODO: Use metadata instead of PathBuf to detect if file or dir
     match std::fs::metadata("sources") {
         Err(_) => {
             std::fs::create_dir("sources")
@@ -185,6 +186,7 @@ fn download_sources() {
         }
         Ok(_) => {
             util::print_color("red", "the file/folder \"sources\" will be overwritten".to_string());
+            // TODO: Use metadata instead of PathBuf to detect if file or dir
             if std::path::PathBuf::from("sources").is_dir() {
                 std::fs::remove_dir_all("sources").expect("Error removing directory");
             } else if std::path::PathBuf::from("sources").is_file() {
